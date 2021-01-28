@@ -62,7 +62,25 @@ p_mode_start:
     mov ax, SELECTOR_VIDEO
     mov gs, ax
 
-    mov byte [gs:160], 'P'
+    call setup_page
+
+    sgdt [gdt_ptr]
+    mov ebx, [gdt_ptr + 2]
+    or dword [ebx + 0x18 + 4], 0xc0000000
+    add dword [gdt_ptr + 2], 0xc0000000
+
+    add esp, 0xc0000000
+
+    mov eax, PAGE_DIR_TABLE_POS
+    mov cr3, eax
+
+    mov eax, cr0
+    or eax, 0x80000000
+    mov cr0, eax
+
+    lgdt [gdt_ptr]
+
+    mov byte [gs:160], 'V'
 
 
     jmp $
@@ -87,7 +105,7 @@ setup_page:
     mov [PAGE_DIR_TABLE_POS + 0xc00], eax ; 第768个页目录，也指向页表的第一项，768内核3-4G 空间的第一个页目录
     sub eax, 0x1000
 
-    mov [PAGE_DIR_TABLE_POS + 4096], eax ;最后一个页目录指向自己的物理地址
+    mov [PAGE_DIR_TABLE_POS + 4092], eax ;最后一个页目录指向自己的物理地址
 
     mov ecx, 256
     mov esi, 0
